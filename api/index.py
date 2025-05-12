@@ -1,9 +1,18 @@
 from flask import Flask, request, jsonify
-from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 import json
 
 app = Flask(__name__)
+
+def cosine_similarity_manual(vec1, vec2):
+    vec1 = np.array(vec1)
+    vec2 = np.array(vec2)
+    dot_product = np.dot(vec1, vec2)
+    norm1 = np.linalg.norm(vec1)
+    norm2 = np.linalg.norm(vec2)
+    if norm1 == 0 or norm2 == 0:
+        return 0.0
+    return dot_product / (norm1 * norm2)
 
 def get_user_vector(user_ratings, all_locations):
     return np.array([user_ratings.get(loc, 0) for loc in all_locations])
@@ -17,7 +26,7 @@ def recommend(user_id, user_location_matrix, top_n=2):
         if other_user == user_id:
             continue
         other_vector = get_user_vector(user_location_matrix[other_user], all_locations)
-        sim = cosine_similarity([target_vector], [other_vector])[0][0]
+        sim = cosine_similarity_manual(target_vector, other_vector)
         similarities.append((other_user, sim))
 
     if not similarities:
@@ -56,5 +65,4 @@ def recommend_endpoint():
         mimetype='application/json'
     )
 
-# Vercel에서 인식할 수 있도록 handler로 export
 handler = app
